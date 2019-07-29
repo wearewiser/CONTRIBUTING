@@ -1,0 +1,598 @@
+# How to GIT Yourself
+
+## Context
+
+This document will go over the basic steps for contributing through git.
+The goal of the improved git workflow is to be able to maintain a current release cycle
+in addition to maintaining the ability to support older release patching.
+Such a structured standard is necessary for DevOps to support both a
+sensible container infrastructure, as well as support automated package deployments.
+Additionally these structured releases become very accomodating to agile development
+when used correctly.
+
+```plaintext
+A ------------------------------------------- N --- [master]
+ \                                      \    /
+  \                                      `- M ----- [release/1.x]
+   \                                       /
+    `- B ------------ G ------------- K - L --- O - [develop]
+        \            / \             /
+         \----- D - F   \           /               [feature/ft1]
+          \              \         /
+           `- C - E ----- H - I - J                 [feature/ft2]
+
++-----------------+------------------+
+| Initial Commits | A, B, C, D, O    |
++-----------------+------------------+
+| Feature Commits | C, D, E, F, I, J |
++-----------------+------------------+
+| Merge Commits   | G, H, K, M, N    |
++-----------------+------------------+
+| Tag Commits     | L                |
++-----------------+------------------+
+```
+> **Diagram**
+>
+> Demonstration of a typical workflow when handling a normal release cycle.
+
+## Table of Contents
+
+<!-- toc -->
+
+- [Context](#context)
+- [Background](#background)
+  - [Commits](#commits)
+    - [Initial Commit](#initial-commit)
+    - [Feature Commit](#feature-commit)
+    - [Merge Commit](#merge-commit)
+    - [Tag Commit](#tag-commit)
+  - [Branches](#branches)
+  - [Master Branch](#master-branch)
+    - [Release Branch](#release-branch)
+    - [Develop Branch](#develop-branch)
+    - [Feature Branch](#feature-branch)
+    - [Hotfix Branch](#hotfix-branch)
+    - [Support Branch](#support-branch)
+  - [Contributors](#contributors)
+    - [Developer](#developer)
+    - [Maintainer](#maintainer)
+- [Project Setup](#project-setup)
+  - [Angular Projects](#angular-projects)
+  - [General Projects](#general-projects)
+- [Workflow Scenarios](#workflow-scenarios)
+  - [Feature Development](#feature-development)
+  - [Deployment](#deployment)
+    - [Deploy to First Release Branch](#deploy-to-first-release-branch)
+    - [Deploy to Current Release Branch](#deploy-to-current-release-branch)
+    - [Deploy to New Release Branch](#deploy-to-new-release-branch)
+  - [Hotfixing](#hotfixing)
+  - [Support Fixes](#support-fixes)
+- [Workspace](#workspace)
+
+<!-- tocstop -->
+
+## Concepts
+
+There are three concepts to discuss:
+
+- [Commits](#commits)
+- [Branches](#branches)
+- [Contributors](#contributors)
+
+Prior to going into detail about the various branching strategies and the associated bureaucracy, it is important to discuss the details of these signficiant concepts.
+
+### Commits
+
+Every additive action in git is represented with a commit.
+Four significant commit concepts will appear in this document:
+
+- [Initial Commit](#initial-commit)
+- [Feature Commit](#feature-commit)
+- [Merge Commit](#merge-commit)
+- [Tag Commit](#tag-commit)
+
+There is value in discussing their distinction,
+as they are created by and represent different processes in the workflow.
+
+#### Initial Commit
+
+Initial commits, in the context of this git workflow, is an
+[empty commit](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---allow-empty)
+made to distinguish the start of a branch. These are not automatically
+made, and are effectively enforced with convention only.
+Intial commits are made, more speficially, after branching from a
+parent branch with the intent on merging the child branch back in.
+After making an initial commit, a pull request draft or WIP merge request
+should be opened by the developer and the appropriate reviewers should
+be assigned.
+
+These commits are expected to be the first commit pushed into all
+branch types except for the [release branchs](#release-branch).
+
+#### Feature Commit
+
+These are your typical commits denoting a change to the codebase.
+These are created by the developer and pushed directly into their branches.
+
+The following is a list of branches in which feature commits are expected to be pushed:
+
+- [Feature Branch](#feature-branch)
+- [Hotfix Branch](#hotfix-branch)
+- [Support Branch](#support-branch)
+
+#### Merge Commit
+
+These are generally created automatically by merging a pull request.
+
+An exception to that, the context of this document,
+is the merge commits found in `master`. The `master` branch should
+updated automatically by the CI/CD to point to the _most recent and stable_
+tag, triggered by merges into the `release/<version>` branches.
+See the [Master Branch](#master-branch) section for more information on this topic.
+
+These commits are expected to be pushed into all branches except for `master`.
+Most of these commits will be generated by the pull request tool or by the
+CI/CD tool.
+
+#### Tag Commit
+
+Tag commits are the commits that associate tag changes.
+These must be completed manually, and should be the responsibility
+of the maintainer after accepting a pull request but prior to
+merging the pull request.
+Tags should follow [semver guidelines](https://semver.org/).
+
+The following is a list of branches in which tag commits are expected to be pushed:
+
+- [Develop Branch](#develop-branch)
+- [Hotfix Branch](#hotfix-branch)
+- [Support Branch](#support-branch)
+
+These are pushed by [maintainers](#maintainers).
+
+### Branches
+
+There are a number of branch prefixes to be aware of.
+The five branch formats are:
+
+- [Release Branch](#release-branch)
+- [Develop Branch](#develop-branch)
+- [Feature Branch](#feature-branch)
+- [Hotfix Branch](#hotfix-branch)
+- [Support Branch](#support-branch)
+
+They all have their own special meanings that will be covered.
+
+### Master Branch
+
+This branch shows your latest stable commits.
+It should reflect your latest package version
+or your most recent deployment to production.
+
+Updating the `master` branch should be done automatically
+by the CI/CD tool, and should be triggered on successful
+merges into the `release/<version>` branches.
+The HEAD of `master` should always point to the highest
+stable tag that has successfully deployed to production.
+
+If no deployment to production has occured, it should
+contain only an [initial commit](#initial-commit) with the
+message _"First commit"_.
+
+The logic on the CI/CD server for determining if
+`master` should be updated automatically may look
+something like the following:
+
+```bash
+if [[
+  "$(git describe --abbrev=0)" != *"-"* &&
+  "$(git describe --abbrev=0)" > "$(git describe --abbrev=0 xxx)"
+]] ;
+then
+  echo "Update master" ;
+else
+  echo "Do not update master" ;
+fi
+```
+> **Snippet**
+>
+> Example logic for determining if `master` needs to be
+> updated. Expects that this is running in a CI/CD block
+> allowed only by merges into a `release/<version>` branch.
+
+#### Release Branch
+
+TODO
+
+#### Develop Branch
+
+TODO
+
+#### Feature Branch
+
+TODO
+
+#### Hotfix Branch
+
+TODO
+
+#### Support Branch
+
+TODO
+
+### Contributors
+
+There are two distinct contributors we need to address:
+
+- [Developer](#developer)
+- [Maintainer](#maintainer)
+
+They both have unique roles to play in the SDLC workflow outlines here.
+
+#### Developer
+
+TODO
+
+#### Maintainer
+
+TODO
+
+## Project Setup
+
+Angular has a CLI tool for setting up an initial project.
+In addition to that, it provides the first commit.
+We can make use of that first commit and immediately push that to `master`.
+Following that, we will do the same with `develop`
+prior to starting with our first feature branch.
+
+### Angular Projects
+
+- Create a [new project in GitHub](https://github.com/new)
+- Generate a new Angular project locally with routing and SASS
+- Push first commit to `origin/master`
+- Checkout new `develop` branch from `master`
+- Push first commit to `origin/develop`
+- Setup GitHub branch protection
+- Start your first feature branch
+
+this is what you might expect to see in the terminal:
+
+```bash
+ng new <project> --routing --style scss
+cd <project>
+git push -u origin master
+git checkout -b develop
+git push -u origin develop
+git checkout -b feature/<title>
+```
+> **Snippet**
+>
+> Local steps for starting an Angular git project
+
+### General Projects
+
+Setting up a git project locally for non-cli tools may be a little different than Angular projects.
+As an intial commit is not provided, we will generate an empty commit
+with the message _"First commit"_ and push that to `master`.
+Following that, we will do the same with `develop` prior to starting with our first feature branch.
+
+- Create a [new project in GitHub](https://github.com/new)
+- Clone the project locally
+- Create a first empty commit "First commit"
+- Push first commit to `origin/master`
+- Checkout new `develop` branch from `master`
+- Push first commit to `origin/develop`
+- Setup GitHub branch protection
+- Start your first feature branch
+
+This is what you might expect to see in the terminal:
+
+```bash
+git clone <project>
+cd <project>
+git commit --allow-empty -m "First commit"
+git push -u origin/master
+git checkout -b develop
+git push -u origin/develop
+git checkout -b feature/<title>
+...
+```
+> **Snippet**
+>
+> Local steps for starting a simple git project
+
+## Workflow Scenarios
+
+- Feature development
+- Deploying patches and minor updates
+  - Development (alpha)
+  - Staging (beta)
+  - Production (stable)
+- New major release
+- Hotfixing
+- Support Fixes
+
+### Feature Development
+
+The latest release is the one that is actively being developed.
+The `develop` branch in it's current state is the unstable state for this release.
+Development is not done directly on the `develop` branch,
+but instead done on `feature/<title>` branches.
+
+Using `feature/<title>` branches for active develop ensures that
+the maintainer has the ability to review all features as they are developed.
+Others working on different features know they can (and should)
+pull accepted features into their own `feature/<title>` branches
+once they have been approved and merged into `develop` by the maintainer.
+This will help protected parallel features from being burdened by compounding conflicts,
+and reduce the probability of last minute bugs occuring after accepting a feature.
+
+```plaintext
+INCORRECT
+
+... -------------- E ------- H - [develop]
+     \            /         /
+      \----- B - D         /     [feature/<name1>]
+       \                  /
+        `- A - C --- F - G       [feature/<name2>]
+
++-----------------+------------+
+| Initial Commits | A, B       |
++------------------------------+
+| Feature Commits | C, D, F, G |
++-----------------+------------+
+| Merge Commits   | E, H       |
++-----------------+------------+
+| Tag Commits     |            |
++-----------------+------------+
+```
+> **Diagram**
+>
+> In this scenario, feature branches `feature/<name1>` and
+> `feature/<name2>` may become out of sync.
+> Potentially significant development may have occured in
+> `feature/<name2>` after the merging of `feature/<name1>` into `develop`.
+> As a result, possible conflicts may become compounded.
+
+```plaintext
+CORRECT
+
+... -------------- E ------------- I - [develop]
+     \            / \             /
+      \----- B - D   \           /     [feature/<name1>]
+       \              \         /
+        `- A - C ----- F - G - H       [feature/<name2>]
+
++-----------------+------------+
+| Initial Commits | A, B       |
++-----------------+------------+
+| Feature Commits | C, D, H, H |
++-----------------+------------+
+| Merge Commits   | E, F, I    |
++-----------------+------------+
+| Tag Commits     |            |
++-----------------+------------+
+```
+> **Diagram**
+>
+> In this scenario, feature branches `feature/<name1>` and
+> `feature/<name2>` may become out of sync.
+> However, the parent `develop` branch is continuously synced
+> into the active `feature/<name2>` branch in order to minimize
+> the difficulty of resolving conflicts.
+
+### Deployment
+
+Deployment is triggered when a merge request into the `release/<version>` branch succeeds.
+The latest tag will become an important factor in the deployment process for three reasons:
+
+1) The most recent tag in the branch will be used to determine target environment for deployment
+2) The most recent tag in the branch points to the commit that will be build and deployed
+3) The most recent tag in the branch, if a stable [semver](https://semver.org/) format,
+will be compared with the most recent tag in `master` to determine if `master` needs to be updated automatically
+
+There are three supported formats for determining environment selection:
+
+| tag          | environment |
+|--------------|-------------|
+| v?.?.?       | Production  |
+| v?.?.?-beta  | Staging     |
+| v?.?.?-alpha | Development |
+> **Table**
+>
+> Table referencing relationship between tag and
+> environment in the context of merges into
+> `release/<version>` branches.
+> The `?` characters in the tag column denote the
+> following character set: `/^[0-9]+$/`.
+> These deployment strategies are largely useful
+> for applicaton deployment, though they can be
+> used for publishing libraries to various artifact
+> repository environments. 
+
+#### Deploy to First Release Branch
+
+```plaintext
+A --------------------------- I --- [master]
+ \                      \    /
+  \                      `- H ----- [release/<version>]
+   \                       /   
+    `- B -------- E - F - G --- J - [develop]
+        \        /
+         `- C - D                   [feature/<title>]
+
++-----------------+------------+
+| Initial Commits | A, B, C, J |
++-----------------+------------+
+| Feature Commits | D          |
++-----------------+------------+
+| Merge Commits   | E, H, I    |
++-----------------+------------+
+| Tag Commits     | F          |
++-----------------+------------+
+```
+
+#### Deploy to Current Release Branch
+
+```plaintext
+... ------------ E --- [master]
+                /
+... ---------- D ----- [release/<current>]
+              /   
+... ---- B - C --- F - [develop]
+        /
+... -- A               [feature/<title>]
+
+... ------------------ [release/<legacy>]
+
++-----------------+---------+
+| Initial Commits | F       |
++-----------------+---------+
+| Feature Commits | A       |
++-----------------+---------+
+| Merge Commits   | B, D, E |
++-----------------+---------+
+| Tag Commits     | C       |
++-----------------+---------+
+```
+> **Diagram**
+>
+> This workflow shows merging into to an existing release branch.
+
+#### Deploy to New Release Branch
+
+```plaintext
+... ------------ E --- [master]
+           \    /
+            `- D ----- [release/<current>]
+              /   
+... ---- B - C --- F - [develop]
+        /
+... -- A               [feature/<title>]
+
+... ------------------ [release/<legacy>]
+
++-----------------+---------+
+| Initial Commits | F       |
++-----------------+---------+
+| Feature Commits | A       |
++-----------------+---------+
+| Merge Commits   | B, D, E |
++-----------------+---------+
+| Tag Commits     | C       |
++-----------------+---------+
+```
+> **Diagram**
+>
+> This workflow shows up a subsequent new release branch and merging into it.
+
+### Hotfixing
+
+Finding bugs in production is unfortunate but unavoidable.
+Depending on the severity of the bug, the fix may require
+bypassing the next scheduled release. In these cases, a
+hotfix patch must be merged back into the active `release/<version>`
+branch directly from a `hotfix/<version>-<title>` branch.
+Depending on the scope of the bug and the number of legacy release
+branches in play, a [support fix](#support-fixes) may also be required.
+
+Similarly to how merging a feature into the `develop`
+branch should prompt all developers to merge `develop`
+into their respective `feature/<title>` branches, merging
+a hotfix into `develop` should be followed with `develop`
+being merged into all active feature branches.
+
+The hotfix branch takes the form `hotfix/<title>`, where
+_name_ is a short, unique, and descriptive name identifying
+the problem. Two WIP pull request should be opened by the
+developer immediately after they are given an initial commit;
+one into the release branch and one into the development branch.
+A maintainer should assigned to these pull request by the developer.
+The developer should remove the WIP status from the pull requests
+once they believe that the hotfix is complete.
+The maintainer should then review the pull request into the feature branch.
+If the review is rejected then the developer will be required to
+resolve the concerns of the maintainer. If the review is accepted,
+then the maintainer will push a version tag and then merge the pull request
+into the release branch. Once the change is deployed,
+the merge request into `develop` should be merged by the maintainer.
+
+```plaintext
+... ---------------- E --- [master]
+                    /
+... -------------- D ----- [release/<current>]
+     \            /
+      `- A - B - C         [hotfix/<title>]
+                  `--.
+                      \
+... ------------------ F - [develop]
+
++-----------------+---------+
+| Initial Commits | A       |
++-----------------+---------+
+| Feature Commits | B       |
++-----------------+---------+
+| Merge Commits   | D, E, F |
++-----------------+---------+
+| Tag Commits     | C       |
++-----------------+---------+
+```
+> **Diagram**
+>
+> This workflow shows merging a support into to an existing legacy release branch.
+
+### Support Fixes
+
+Support fixes are like [hotfixes](#hotfixing) in that they are done on special branches made from a given `release/<version>` branch and that they are merged directly back into the release branch. However, they are different in that their changes are to be applied to legacy releases, and they cannot be merged back into develop. If the bug affects multiple releases, they must be addressed independently to avoid issues with merging stale code and mixing version tags between releases.
+
+```plaintext
+... ------------------ [master]
+
+... ------------------ [release/<current>]
+
+... -------------- D - [release/<legacy>]
+     \            /
+      `- A - B - C     [support/<legacy>-<title>]
+
++-----------------+---+
+| Initial Commits | A |
++-----------------+---+
+| Feature Commits | B |
++-----------------+---+
+| Merge Commits   | D |
++-----------------+---+
+| Tag Commits     | C |
++-----------------+---+
+```
+> **Diagram**
+>
+> This workflow shows merging a support into to an existing legacy release branch.
+
+```plaintext
+
+... ---------------- E --- [master]
+                    /
+... -------------- D ----- [release/<current>]
+     \            /
+      `- A - B - C         [hotfix/<title>]
+                  `--.
+                      \
+... ------------------ F - [develop]
+
+... ---------------- D' -- [release/<legacy>]
+     \              /
+      `- A' - B' - C'      [support/<legacy>-<title>]
+
++-----------------+-------------+
+| Initial Commits | A, A'       |
++-----------------+-------------+
+| Feature Commits | B, B'       |
++-----------------+-------------+
+| Merge Commits   | D, D', E, F |
++-----------------+-------------+
+| Tag Commits     | C, C'       |
++-----------------+-------------+
+```
+> **Diagram**
+>
+> This workflow shows merging a support into to an existing legacy release branch while also pushing a similar yet independent patch from a hotfix branch into the current release. 
