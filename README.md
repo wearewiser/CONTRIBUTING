@@ -202,23 +202,61 @@ fi
 
 #### Release Branch
 
-TODO
+Merges into this branch, from the `develop` branch are is managed by the code maintainer. A merge into this branch triggers the CI/CD to deploy the latest tagged commit to the appropriate system using SemVer naming standards.
+
+All merges into the `release/<version>` branch should be tagged with an appropriate tag version. If major version are broken up across systems, then it would be expected that the correct branch is tagged major tag will be merged into the correct release branch.
+
+When the CI/CD server is triggered by an update to a release branch, one would expect the CI/CD server to then release the latest tag in the current branch. The effect of this is to anticipate that only tagged commits are deployed.
+
+The logic on the CI/CD server for determining if the current branch is a release branch may look like the following:
+
+```bash
+export RELEASE="release/.*"
+if [[ "$(git branch | grep \* | cut -d ' ' -f2)" =~ $RELEASE ]] ; then
+  echo "Release branch - checking out last tag $(git describe --abbrev=0)" ;
+  git checkout $(git describe --abbrev=0)
+else
+  echo "Not release branch - moving forward." ;
+fi
+```
+
+However, it's not just enough for a release branch to check _if_ a tag exists - it also must deteremine what suffix the tag has. Is it a stable tag, a beta tag, or an alpha tag. This can help the CI/CD system determine what environment to publish the build artifacts into.
+
+The logic on the CI/CD server for determining the alpha/beta/stable status of a tag may look like the following:
+
+```bash
+export TAG="$(git describe --abbrev=0)"
+export ALPHA="^v?([0-9]+\d*)\.([0-9]+\d*)\.([0-9]+\d*)-alpha((\.[0-9]+)|$)$"
+export BETA="^v?([0-9]+\d*)\.([0-9]+\d*)\.([0-9]+\d*)-beta((\.[0-9]+)|$)$"
+export STABLE="^v?([0-9]+\d*)\.([0-9]+\d*)\.([0-9]+\d*)$"
+if [[ "$TAG" =~ $ALPHA ]] ; then
+  echo "Alpha tag $TAG" ;
+elif [[ "$TAG" =~ $BETA ]] ; then
+  echo "Beta tag $TAG" ;
+elif [[ "$TAG" =~ $STABLE ]] ; then
+  echo "Stable tag $TAG" ;
+else
+  echo "Unknown tag $TAG"
+fi
+```
 
 #### Develop Branch
 
-TODO
+A common development branch, reflecting development progress on the latest version. Development should not occur directly on this branch, but instead should be done in `feature/<version>` branches and merged into `develop`. All merging into this branch should be performed by a code maintainer.
 
 #### Feature Branch
 
-TODO
+Where active development occurs. Generally, one developer will be working on a single feature branch at a time.
+
+These branches are expected to be up-to-date at the time of a merge request, but it is best if they are continuously kept in-sync with changes on `develop`.
 
 #### Hotfix Branch
 
-TODO
+These branches are opened in response to immediate changes required on the **latest version**’s release branch. It is expected that these changes **will be** back-merged into the develop branch.
 
 #### Support Branch
 
-TODO
+These branches are opened in response to immediate changes required on a **legacy version**’s release branch. It is expected that these changes **will not be** back-merged into the develop branch.
 
 ### Contributors
 
@@ -231,11 +269,13 @@ They both have unique roles to play in the SDLC workflow outlines here.
 
 #### Developer
 
-TODO
+The person who develops features. They generally work out of a `feature/<name>` branch.
+
+The developer is responsible for ensuring that merge conflicts do not arise for the code maintainer between their `feature/<name>` branch and the `develop` branch.
 
 #### Maintainer
 
-TODO
+The person who is responsible for maintaining the code through code reviews, merge requests, and tagging.
 
 ## Project Setup
 
