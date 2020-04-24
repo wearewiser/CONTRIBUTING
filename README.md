@@ -1,4 +1,4 @@
-# How to GIT Yourself
+# CONTRIBUTING
 
 ## Context
 
