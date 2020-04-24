@@ -246,6 +246,13 @@ else
   echo "Unknown tag $TAG"
 fi
 ```
+> **Snippet**
+>
+> Example logic for determining if the current tag is
+> considered `alpha`, `beta`, or `stable`. The CI/CD
+> system should go on to deploy `alpha` code to a `devl`
+> system, deploy `beta` code to a `test` system, and
+> deploy `stable` code to a `prod` system.
 
 #### Develop Branch
 
