@@ -219,6 +219,13 @@ else
   echo "Not release branch - moving forward." ;
 fi
 ```
+> **Snippet**
+>
+> Example logic for determining if the current branch
+> is a `release/<version>` branch, if so it checks out
+> the latest tag on the branch. The CI/CD system should
+> proceed with deployment on the latest tag commit if
+> it is on a release branch.
 
 However, it's not just enough for a release branch to check _if_ a tag exists - it also must deteremine what suffix the tag has. Is it a stable tag, a beta tag, or an alpha tag. This can help the CI/CD system determine what environment to publish the build artifacts into.
 
